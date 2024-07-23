@@ -19,3 +19,4 @@ numpy==1.26.4
 nbgitpuller
 jupyterlab-git
 nbformat
+widgetsnbextension

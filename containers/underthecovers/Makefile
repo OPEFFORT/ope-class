@@ -25,7 +25,7 @@ BASE_TAG := $(shell cat base/base_tag)
 DATE_TAG := $(shell date +"%m.%d.%y_%H.%M.%S")
 
 
-# User can be an organization, 
+# User can be an organization,
 OPE_BOOK_USER := $(shell if  [[ -a base/ope_book_user ]]; then cat base/ope_book_user; else echo ${USER}; fi)
 OPE_BOOK_REG := $(shell cat base/ope_book_registry)/
 
@@ -41,16 +41,16 @@ PIP_INSTALL_PACKAGES := $(shell cat base/pip_pkgs)
 
 # Why if for second and not first?
 JUPYTER_ENABLE_EXTENSIONS := $(shell cat base/jupyter_enable_exts)
-JUPYTER_DISABLE_EXTENSIONS := $(shell if  [[ -a base/jupyter_disable_exts  ]]; then cat base/jupyter_disable_exts; fi) 
+JUPYTER_DISABLE_EXTENSIONS := $(shell if  [[ -a base/jupyter_disable_exts  ]]; then cat base/jupyter_disable_exts; fi)
 
 
-# Set customization 
+# Set customization
 CUSTOMIZE_FROM := $(shell if  [[ -a base/customize_from ]]; then cat base/customize_from; else echo ${OPE_BOOK_REG}${OPE_BOOK_IMAGE}; fi)
 
 # <reg>/<ope_project>:<ope_container>-<stable|test>-<customization>-<latest|date>
 # quay.io/ucsls:stable-ucsls-burosa2023prod-latest
 
-CUSTOMIZE_NAME := $(CUSTOMIZE_FROM)-test-$(shell cat base/customize_name) 
+CUSTOMIZE_NAME := $(CUSTOMIZE_FROM)-test-$(shell cat base/customize_name)
 
 CUSTOMIZE_UID := $(shell cat base/customize_uid)
 CUSTOMIZE_GID := $(shell cat base/customize_gid)
@@ -62,7 +62,10 @@ MOUNT_DIR := $(shell cat base/mount_dir)
 HOST_DIR := ${HOME}
 
 # extra directories to fix permissions on
-EXTRA_CHOWN := $(shell if  [[ -a base/extra_chown  ]]; then cat base/extra_chown; fi) 
+EXTRA_CHOWN := $(shell if  [[ -a base/extra_chown  ]]; then cat base/extra_chown; fi)
+
+# expand installation so that the image feels more like a proper UNIX user environment with man pages, etc.
+UNMIN := yes
 
 help:
 # http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
@@ -78,17 +81,18 @@ build: DARGS ?= --build-arg FROM_REG=$(BASE_REG) \
                    --build-arg PYTHON_PREREQ_VERSIONS="$(PYTHON_PREREQ_VERSIONS)" \
                    --build-arg PYTHON_INSTALL_PACKAGES="$(PYTHON_INSTALL_PACKAGES)" \
                    --build-arg PIP_INSTALL_PACKAGES="$(PIP_INSTALL_PACKAGES)" \
-				   --build-arg EXTRA_CHOWN="$(EXTRA_CHOWN)"
+				   --build-arg EXTRA_CHOWN="$(EXTRA_CHOWN)" \
+				   --build-arg UNMIN=$(UNMIN)
 build: ## Make the image customized appropriately
 	docker build $(DARGS) $(DCACHING) -t $(OPE_BOOK_REG)$(OPE_BOOK_IMAGE)$(OPE_BETA_TAG) --file base/Build.Dockerfile base
-	
+
 customize: DARGS ?= --build-arg FROM_IMAGE=$(CUSTOMIZE_FROM) \
                    --build-arg CUSTOMIZE_UID=$(CUSTOMIZE_UID) \
                    --build-arg CUSTOMIZE_GID=$(CUSTOMIZE_GID) \
                    --build-arg CUSTOMIZE_GROUP=$(CUSTOMIZE_GROUP) \
 		           --build-arg EXTRA_CHOWN="$(EXTRA_CHOWN)"
 customize:  ## build a customized deployment image
-	docker build $(DARGS) $(DCACHING) --rm --force-rm -t $(CUSTOMIZE_NAME) --file base/Customize.Dockerfile base 
+	docker build $(DARGS) $(DCACHING) --rm --force-rm -t $(CUSTOMIZE_NAME) --file base/Customize.Dockerfile base
 	docker-squash -t $(CUSTOMIZE_NAME) $(CUSTOMIZE_NAME)
 
 push: DARGS ?=
@@ -131,7 +135,7 @@ show-tag: ARGS ?=
 show-tag: DARGS ?=
 show-tag: ## tag current private build as beta
 	@-echo $(OPE_BOOK_REG)$(OPE_BOOK_IMAGE)$(OPE_BETA_TAG)
-  
+
 
 ### DEBUG TARGETS
 root: ARGS ?= /bin/bash
@@ -146,7 +150,7 @@ user: ## start private version with usershell to poke around
 
 
 ### PUBLIC USAGE TARGETS
-pull: 
+pull:
 pull: ## pull most recent public version
 	docker pull $(OPE_BOOK_REG)$(OPE_BOOK_IMAGE)$(OPE_PUBLIC_TAG)
 
@@ -156,10 +160,10 @@ run: ARGS ?=
 run: DARGS ?= -u $(OPE_UID):$(OPE_GID) -v "${HOST_DIR}":"${MOUNT_DIR}" -v "${SSH_AUTH_SOCK}":"${SSH_AUTH_SOCK}" -v "${SSH_AUTH_SOCK}":"${SSH_AUTH_SOCK}" -e SSH_AUTH_SOCK=${SSH_AUTH_SOCK}
 run: PORT ?= 8888
 run: ## start published version with jupyter lab interface
-	docker run -it --rm -p $(PORT):$(PORT) $(DARGS) $(OPE_BOOK_REG)$(OPE_BOOK_IMAGE)$(OPE_PUBLIC_TAG) $(ARGS) 
+	docker run -it --rm -p $(PORT):$(PORT) $(DARGS) $(OPE_BOOK_REG)$(OPE_BOOK_IMAGE)$(OPE_PUBLIC_TAG) $(ARGS)
 
 run-cust: ARGS ?=
-run-cust: DARGS ?= -u $(CUSTOMIZE_UID):$(CUSTOMIZE_GID) -v "${HOST_DIR}":"${MOUNT_DIR}" -v "${SSH_AUTH_SOCK}":"${SSH_AUTH_SOCK}" -v "${SSH_AUTH_SOCK}":"${SSH_AUTH_SOCK}" -e SSH_AUTH_SOCK=${SSH_AUTH_SOCK} 
+run-cust: DARGS ?= -u $(CUSTOMIZE_UID):$(CUSTOMIZE_GID) -v "${HOST_DIR}":"${MOUNT_DIR}" -v "${SSH_AUTH_SOCK}":"${SSH_AUTH_SOCK}" -v "${SSH_AUTH_SOCK}":"${SSH_AUTH_SOCK}" -e SSH_AUTH_SOCK=${SSH_AUTH_SOCK}
 run-cust: PORT ?= 8888
 run-cust: ## start published version with jupyter lab interface
 	docker run -it --rm -p $(PORT):$(PORT) $(DARGS) $(CUSTOMIZE_NAME) $(ARGS)

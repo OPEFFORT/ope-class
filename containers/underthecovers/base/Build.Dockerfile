@@ -20,6 +20,8 @@ ARG PYTHON_INSTALL_PACKAGES
 ARG JUPYTER_ENABLE_EXTENSIONS
 ARG JUPYTER_DISABLE_EXTENSIONS
 
+ARG UNMIN
+
 # Fix: https://github.com/hadolint/hadolint/wiki/DL4006
 # Fix: https://github.com/koalaman/shellcheck/wiki/SC3014
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -46,14 +48,14 @@ USER ${NB_UID}
 # packages. Install Python 3 packages
 #RUN python --version
 
-RUN mamba install --yes python=3.9.13  --no-pin --force-reinstall && \ 
+RUN mamba install --yes python=3.9.13  --no-pin --force-reinstall && \
     mamba install --yes ${PYTHON_PREREQ_VERSIONS} && \
     mamba install --yes ${PYTHON_INSTALL_PACKAGES} && \
     mamba install --yes jupyterlab_rise==0.42.0 && \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}" && \
     mamba clean -afy
-    
+
 # Import matplotlib the first time to build the font cache.
 ENV XDG_CACHE_HOME="/home/${NB_USER}/.cache/"
 
@@ -77,13 +79,16 @@ COPY settings ${CONDA_DIR}/share/jupyter/lab/settings
 
 USER root
 
+# we want the container to feel more like a fully fledged system so we are pulling the trigger and unminimizing it
+RUN [[ $UNMIN == "yes" ]] &&  yes | unminimize || true
+
 RUN mkdir /home/ope && \
     cd /home/ope && \
     git clone https://github.com/OPEFFORT/tools.git . && \
     ./install.sh && \
     chown jovyan /home/ope && \
     fix-permissions /home/ope
-    
+
 # final bits of cleanup
 RUN touch /home/${NB_USER}/.hushlogin && \
 # use a short prompt to improve default behaviour in presentations
@@ -93,7 +98,7 @@ RUN touch /home/${NB_USER}/.hushlogin && \
 # finally remove default working directory from joyvan home
     rmdir /home/${NB_USER}/work && \
     # as per the nbstripout readme we setup nbstripout be always be used for the joyvan user for all repos
-    nbstripout --install --system 
+    nbstripout --install --system
 
 # Static Customize for OPE USER ID choices
 # To avoid problems with start.sh logic we do not modify user name
@@ -128,6 +133,10 @@ RUN /usr/local/bin/start.sh true; \
 
 COPY start-notebook.d /usr/local/bin/start-notebook.d
 
+# over ride locale environment variables that have been set before us
+ENV LC_ALL C.UTF-8
+ENV LANG C.UTF-8
+ENV LANGUAGE=
 ENV USER=$NB_USER
 
 # Change the ownership of the home directory to ope group so it starts up properly
