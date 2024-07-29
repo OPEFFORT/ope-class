@@ -82,7 +82,9 @@ build: DARGS ?= --build-arg FROM_REG=$(BASE_REG) \
                    --build-arg PYTHON_INSTALL_PACKAGES="$(PYTHON_INSTALL_PACKAGES)" \
                    --build-arg PIP_INSTALL_PACKAGES="$(PIP_INSTALL_PACKAGES)" \
 				   --build-arg EXTRA_CHOWN="$(EXTRA_CHOWN)" \
-				   --build-arg UNMIN=$(UNMIN)
+				   --build-arg UNMIN=$(UNMIN) \
+ 				   --build-arg JUPYTER_ENABLE_EXTENSIONS="$(JUPYTER_ENABLE_EXTENSIONS)" \
+                   --build-arg JUPYTER_DISABLE_EXTENSIONS="$(JUPYTER_DISABLE_EXTENSIONS)"
 build: ## Make the image customized appropriately
 	docker build $(DARGS) $(DCACHING) -t $(OPE_BOOK_REG)$(OPE_BOOK_IMAGE)$(OPE_BETA_TAG) --file base/Build.Dockerfile base
 
