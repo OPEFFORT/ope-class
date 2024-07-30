@@ -43,6 +43,7 @@ PIP_INSTALL_PACKAGES := $(shell cat base/pip_pkgs)
 JUPYTER_ENABLE_EXTENSIONS := $(shell cat base/jupyter_enable_exts)
 JUPYTER_DISABLE_EXTENSIONS := $(shell if  [[ -a base/jupyter_disable_exts  ]]; then cat base/jupyter_disable_exts; fi)
 
+GDB_BUILD_SRC := gdb-12.1
 
 # Set customization
 CUSTOMIZE_FROM := $(shell if  [[ -a base/customize_from ]]; then cat base/customize_from; else echo ${OPE_BOOK_REG}${OPE_BOOK_IMAGE}; fi)
@@ -82,7 +83,11 @@ build: DARGS ?= --build-arg FROM_REG=$(BASE_REG) \
                    --build-arg PYTHON_INSTALL_PACKAGES="$(PYTHON_INSTALL_PACKAGES)" \
                    --build-arg PIP_INSTALL_PACKAGES="$(PIP_INSTALL_PACKAGES)" \
 				   --build-arg EXTRA_CHOWN="$(EXTRA_CHOWN)" \
-				   --build-arg UNMIN=$(UNMIN)
+				   --build-arg GDB_BUILD_SRC=$(GDB_BUILD_SRC) \
+				   --build-arg UNMIN=$(UNMIN) \
+ 				   --build-arg JUPYTER_ENABLE_EXTENSIONS="$(JUPYTER_ENABLE_EXTENSIONS)" \
+                   --build-arg JUPYTER_DISABLE_EXTENSIONS="$(JUPYTER_DISABLE_EXTENSIONS)"
+                   
 build: ## Make the image customized appropriately
 	docker build $(DARGS) $(DCACHING) -t $(OPE_BOOK_REG)$(OPE_BOOK_IMAGE)$(OPE_BETA_TAG) --file base/Build.Dockerfile base
 
