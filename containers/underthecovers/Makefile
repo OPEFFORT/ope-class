@@ -24,6 +24,8 @@ BASE_TAG := $(shell cat base/base_tag)
 
 DATE_TAG := $(shell date +"%m.%d.%y_%H.%M.%S")
 
+# build gdb from source to ensure we get the right version and build with tui support
+GDB_BUILD_SRC := gdb-12.1
 
 # User can be an organization,
 OPE_BOOK_USER := $(shell if  [[ -a base/ope_book_user ]]; then cat base/ope_book_user; else echo ${USER}; fi)
@@ -84,7 +86,9 @@ build: DARGS ?= --build-arg FROM_REG=$(BASE_REG) \
 				   --build-arg EXTRA_CHOWN="$(EXTRA_CHOWN)" \
 				   --build-arg UNMIN=$(UNMIN) \
  				   --build-arg JUPYTER_ENABLE_EXTENSIONS="$(JUPYTER_ENABLE_EXTENSIONS)" \
-                   --build-arg JUPYTER_DISABLE_EXTENSIONS="$(JUPYTER_DISABLE_EXTENSIONS)"
+                   --build-arg JUPYTER_DISABLE_EXTENSIONS="$(JUPYTER_DISABLE_EXTENSIONS)" \
+				   --build-arg GDB_BUILD_SRC=$(GDB_BUILD_SRC)
+				   
 build: ## Make the image customized appropriately
 	docker build $(DARGS) $(DCACHING) -t $(OPE_BOOK_REG)$(OPE_BOOK_IMAGE)$(OPE_BETA_TAG) --file base/Build.Dockerfile base
 
