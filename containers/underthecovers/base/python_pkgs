@@ -12,7 +12,6 @@ jupyter_contrib_nbextensions
 jupyterlab-spellchecker
 nbconvert==7.16.2
 pyppeteer
-gdb
 jupyterlab==4.2.1
 jupyterlab-myst==2.4.2
 numpy==1.26.4
