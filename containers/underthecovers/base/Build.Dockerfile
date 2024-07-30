@@ -20,6 +20,8 @@ ARG PYTHON_INSTALL_PACKAGES
 ARG JUPYTER_ENABLE_EXTENSIONS
 ARG JUPYTER_DISABLE_EXTENSIONS
 
+ARG GDB_BUILD_SRC
+
 ARG UNMIN
 
 # Fix: https://github.com/hadolint/hadolint/wiki/DL4006
@@ -41,6 +43,19 @@ RUN dpkg --add-architecture i386 && \
 # This was inspired by
 # https://github.com/jupyter/docker-stacks/blob/b186ce5fea6aa9af23fb74167dca52908cb28d71/scipy-notebook/Dockerfile
 
+# get and build gdb form source so that we have a current version >10 that support more advanced tui functionality 
+RUN if [[ -n "${GDB_BUILD_SRC}" ]] ; then \
+      cd /tmp && \
+      wget http://ftp.gnu.org/gnu/gdb/${GDB_BUILD_SRC}.tar.gz && \
+      tar -zxf ${GDB_BUILD_SRC}.tar.gz && \
+      cd ${GDB_BUILD_SRC} && \
+      ./configure --prefix /usr/local --enable-tui=yes && \
+      make -j 4 && make install && \
+      cd /tmp && \
+      rm -rf ${GDB_BUILD_SRC} && rm ${GDB_BUILD_SRC}.tar.gz ; \
+    fi 
+
+    
 USER ${NB_UID}
 
 # sometimes there are problems with the existing version of installed python packages
