@@ -43,7 +43,7 @@ RUN dpkg --add-architecture i386 && \
 # This was inspired by
 # https://github.com/jupyter/docker-stacks/blob/b186ce5fea6aa9af23fb74167dca52908cb28d71/scipy-notebook/Dockerfile
 
-# get and build gdb form source so that we have a current version >10 that support more advanced tui functionality 
+# get and build gdb form source so that we have a current version >10 that support more advanced tui functionality
 RUN if [[ -n "${GDB_BUILD_SRC}" ]] ; then \
       cd /tmp && \
       wget http://ftp.gnu.org/gnu/gdb/${GDB_BUILD_SRC}.tar.gz && \
@@ -53,9 +53,9 @@ RUN if [[ -n "${GDB_BUILD_SRC}" ]] ; then \
       make -j 4 && make install && \
       cd /tmp && \
       rm -rf ${GDB_BUILD_SRC} && rm ${GDB_BUILD_SRC}.tar.gz ; \
-    fi 
+    fi
 
-    
+
 USER ${NB_UID}
 
 # sometimes there are problems with the existing version of installed python packages
@@ -89,10 +89,13 @@ RUN for ext in ${JUPYTER_DISABLE_EXTENSIONS} ; do \
    fix-permissions "${CONDA_DIR}" && \
    fix-permissions "/home/${NB_USER}"
 
-# copy overrides.json
-COPY settings ${CONDA_DIR}/share/jupyter/lab/settings
 
 USER root
+# copy overrides.json
+COPY settings ${CONDA_DIR}/share/jupyter/lab/settings
+RUN chmod 775 ${CONDA_DIR}/share/jupyter/lab/settings && \
+    fix-permissions ${CONDA_DIR}/share/jupyter/lab/settings
+
 
 # we want the container to feel more like a fully fledged system so we are pulling the trigger and unminimizing it
 RUN [[ $UNMIN == "yes" ]] &&  yes | unminimize || true
